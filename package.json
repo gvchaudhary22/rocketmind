@@ -1,0 +1,90 @@
+{
+  "name": "@shiprocket/rocketmind",
+  "version": "2.8.1",
+  "description": "Production-grade RocketMind framework — design, build, deploy, and monitor any kind of work",
+  "main": "bin/install.js",
+  "bin": {
+    "rocketmind": "bin/install.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "scripts": {
+    "setup": "bash bin/setup.sh",
+    "context": "node bin/context.js",
+    "bootstrap": "node bin/bootstrap.js",
+    "install-local": "bash install.sh --local --tool claude",
+    "install-global": "bash install.sh --global --tool claude",
+    "install-all": "bash install.sh --global --all",
+    "nexus-init": "node bin/install.js nexus init",
+    "nexus-sync": "node bin/install.js nexus sync",
+    "validate": "bash bin/validate.sh",
+    "eval": "bash bin/eval.sh",
+    "lint": "eslint bin/",
+    "lint:fix": "eslint bin/ --fix",
+    "format:check": "prettier --check bin/",
+    "format:write": "prettier --write bin/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "promote": "bash bin/promote.sh",
+    "generate": "node bin/generate-instructions.js --runtime claude --output .claude/CLAUDE.md",
+    "generate:views": "node bin/generate-instructions.js --human-views",
+    "generate:plans": "node bin/generate-plan-index.js"
+  },
+  "keywords": [
+    "ai-agents",
+    "claude",
+    "claude-code",
+    "llm",
+    "orchestration",
+    "agentic",
+    "skills",
+    "tdd",
+    "devops",
+    "automation"
+  ],
+  "author": "Shiprocket Engineering",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shiprocket/rocketmind"
+  },
+  "bugs": {
+    "url": "https://github.com/shiprocket/rocketmind/issues"
+  },
+  "homepage": "https://github.com/shiprocket/rocketmind#readme",
+  "files": [
+    "README.md",
+    "templates/",
+    "INSTRUCTIONS.md",
+    "SKILLS.md",
+    "WORKFLOWS.md",
+    "rocketmind.registry.json",
+    "rocketmind.config.json",
+    "rocketmind.config.schema.json",
+    "install.sh",
+    "agents/",
+    "skills/",
+    "commands/",
+    "state/",
+    "hooks/",
+    "docs/",
+    "bin/",
+    "examples/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  }
+}

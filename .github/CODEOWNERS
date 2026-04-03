@@ -1,0 +1,5 @@
+# RocketMind Code Owners
+# This file ensures only shiprocket (or specified owners) can approve PRs.
+# The * means every file in the repo.
+
+* @shiprocket

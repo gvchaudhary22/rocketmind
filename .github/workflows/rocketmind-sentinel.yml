@@ -1,0 +1,263 @@
+name: RocketMind Sentinel (SOTA Governance)
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  lock-check:
+    name: lock-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+  pr-governance:
+    name: pr-governance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: 📥 Load live PR body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          short_sha="${EXPECTED_HEAD_SHA:0:7}"
+          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+            gh pr view "$PR_NUMBER" --json body --jq .body > /tmp/rocketmind-pr-body.md
+            if grep -Fq "Head SHA: \`$short_sha\`" /tmp/rocketmind-pr-body.md; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 12 ]; then
+              echo "PR body still references an older head SHA; retrying fetch ($attempt/12)..."
+              sleep 5
+            fi
+          done
+
+          echo "PR body did not refresh to head SHA $short_sha after retries."
+          cat /tmp/rocketmind-pr-body.md
+          exit 1
+      - name: 📄 Load changed files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr diff "$PR_NUMBER" --name-only > /tmp/rocketmind-pr-files.txt
+      - name: 🧷 Load tracked residual issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          refs=$(grep -oE 'Tracked by #[0-9]+' /tmp/rocketmind-pr-body.md | awk '{print $3}' | sort -u || true)
+          printf '[]' > /tmp/rocketmind-tracked-issues.json
+
+          if [ -z "$refs" ]; then
+            exit 0
+          fi
+
+          : > /tmp/rocketmind-tracked-issues.jsonl
+          for ref in $refs; do
+            number="${ref#\#}"
+            gh issue view "$number" \
+              --json number,state,title,url \
+              --jq '{issue_ref: ("#" + (.number | tostring)), number, state, title, url}' \
+              >> /tmp/rocketmind-tracked-issues.jsonl
+          done
+          node bin/collect-tracked-issues.js --input /tmp/rocketmind-tracked-issues.jsonl > /tmp/rocketmind-tracked-issues.json
+      - name: 🧭 PR governance gate
+        run: node bin/validate-pr-governance.js --event-file "$GITHUB_EVENT_PATH" --body-file /tmp/rocketmind-pr-body.md --tracked-issues-file /tmp/rocketmind-tracked-issues.json
+      - name: 📚 Docs-update governance gate
+        run: node bin/validate-doc-updates.js --body-file /tmp/rocketmind-pr-body.md --changed-files-file /tmp/rocketmind-pr-files.txt
+      - name: 🔒 Verify package-lock.json is up to date
+        run: npm ci --dry-run
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    needs: [lock-check, pr-governance]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🔍 ESLint
+        run: npm run lint
+      - name: 🎨 Prettier format check
+        run: npm run format:check
+      - name: 🚫 PII scan
+        run: |
+          if git grep -r "/Users/" -- '*.json' '*.sh' '*.js' '*.ts' \
+            ':(exclude).github/workflows/rocketmind-sentinel.yml'; then
+            echo "❌ Hardcoded local paths detected — remove before merging"
+            exit 1
+          fi
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🧪 Unit Tests
+        run: npm test
+      - name: 📊 Coverage gate (≥60%)
+        run: npm run test:coverage
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🛡️ Semantic Validation
+        run: bash bin/validate.sh
+      - name: 📝 Changelog Verification
+        run: |
+          if ! grep -q "## \[$(jq -r .version < package.json)\]" CHANGELOG.md; then
+            echo "❌ Version mismatch: Current version in package.json is not documented in CHANGELOG.md"
+            exit 1
+          fi
+
+  compliance:
+    name: compliance
+    runs-on: ubuntu-latest
+    needs: lock-check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🏅 SOTA Compliance Check
+        run: bash bin/eval.sh
+
+  safety:
+    name: safety
+    runs-on: ubuntu-latest
+    needs: lock-check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🔒 Safety & Adversarial Audit
+        run: bash bin/test-safety.sh
+
+  sca:
+    name: sca
+    runs-on: ubuntu-latest
+    needs: lock-check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: 🔍 npm audit (high+critical)
+        run: npm audit --audit-level=high
+
+  install-test:
+    name: install-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: 🔧 install.sh integration tests
+        run: bash tests/install.test.sh
+
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: 📊 Eval runner (routing/workflow/registry/portability ≥80%)
+        run: node bin/eval-runner.js --json | tee eval-report.json && node bin/eval-runner.js
+      - name: Upload eval report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: eval-report
+          path: eval-report.json
+
+  workflow-lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: 🔍 actionlint (workflow architecture)
+        run: |
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint
+
+  self-audit:
+    name: self-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: 🔭 Config consistency (version skew, hook flags, model IDs, kernel purity)
+        run: bash bin/validate-config.sh
+
+  human-views-drift:
+    name: human-views-drift
+    runs-on: ubuntu-latest
+    needs: lock-check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: 📄 Regenerate human-view files
+        run: node bin/generate-instructions.js --human-views
+      - name: 🔍 Detect drift (fail if committed files differ from generated)
+        run: |
+          git diff --exit-code INSTRUCTIONS.md SKILLS.md WORKFLOWS.md || {
+            echo ""
+            echo "❌ Human-view files are out of sync with rocketmind.registry.json or the templates."
+            echo "   Run: node bin/generate-instructions.js --human-views"
+            echo "   Then commit the updated INSTRUCTIONS.md, SKILLS.md, WORKFLOWS.md."
+            exit 1
+          }
+
+  publish-dry-run:
+    name: publish-dry-run
+    runs-on: ubuntu-latest
+    needs: [lint, test, validate, self-audit, human-views-drift]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com/'
+      - name: Install dependencies
+        run: npm ci
+      - name: 📦 npm publish --dry-run (validate package is publishable)
+        run: npm publish --dry-run

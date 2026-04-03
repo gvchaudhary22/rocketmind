@@ -1,0 +1,139 @@
+<div align="center">
+  <img src="https://github.com/shiprocket/rocketmind/raw/main/docs/assets/rocketmind-logo.png" alt="RocketMind Logo" width="120" />
+  <h1>RocketMind — AI Agent Orchestration Framework</h1>
+  <p><strong>Production-grade, repo-native control plane for agentic software delivery.</strong></p>
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Standard](https://img.shields.io/badge/standard-Shiprocket_Engineering-black)](#)
+
+</div>
+
+---
+
+## What is RocketMind?
+
+RocketMind is a tool-agnostic control plane that turns any compatible coding agent (Claude, Codex, Antigravity) into a coordinated engineering team. It classifies intent, routes to specialist agents, executes work in parallel waves with fresh contexts, and persists state across sessions — all from your repository.
+
+**Key capabilities:** smart agent routing · Agent Forge · wave execution · model-cost routing · prompt injection defense · 21 reusable skills · STATE.md persistence · multi-repo Nexus mode
+
+Supported runtimes can infer workflow intent from plain prompts. Users do not have to prefix every request with `/rocketmind:*` when the adapter supports it; explicit commands still override inference.
+
+### Compatibility
+
+RocketMind works across runtimes — Claude Code (native), Codex (stable), Antigravity (experimental). Any agent that can read markdown instructions and run repo-local scripts can use the same registry, skills, and workflows without changes. See [docs/architecture/runtime-adapters.md](docs/architecture/runtime-adapters.md).
+
+---
+
+## Install
+
+**Prerequisites:** Node.js ≥18, `npm`, `gh` CLI authenticated.
+
+```bash
+# VS Code / IDE — installs into project .claude/
+bash install.sh --local --tool claude
+
+# Terminal claude CLI — installs into ~/.claude/
+bash install.sh --global --tool claude
+
+# Both
+bash install.sh --all --tool claude
+```
+
+> Slash commands (`/rocketmind:*`) are only available after install. If `/rocketmind:resume` shows "Unknown skill", run the install command for your mode and open a new session.
+
+Verify: open a Claude Code session and type `/rocketmind:help`.
+
+For local repo installs, RocketMind also links git lifecycle hooks for `pre-commit`, `post-commit`, and `pre-push` when a Git worktree is detected, including linked worktrees.
+
+**Contributing / core development:**
+
+```bash
+git clone https://github.com/shiprocket/rocketmind.git && cd rocketmind
+npm install
+bash install.sh --local --tool claude
+```
+
+Core development follows RocketMind-on-RocketMind rules: create or identify the issue, cut a feature branch from freshly pulled `develop`, use an RocketMind workflow command as the task entrypoint, run review on the feature branch, and open a PR using the repo's standard body structure. Branches should follow `<type>/<slug>` naming such as `feat/143-pr-governance-enforcement` or `fix/145-context-minimal-dedup`. If the branch scope changes after the PR is opened, update the PR body in the same pass so `Summary`, `Issues`, `Ship Decision`, `Test plan`, and `Merge notes` remain truthful, and refresh the `Head SHA` marker before re-review. Treat that refresh as part of the work, not optional cleanup. PR progression also requires evidence: `## Test plan` must list the commands actually run, and `RocketMind Self-Review` must record the review command, dispatched agents, ship decision, and findings handled. Behavior-sensitive changes must also declare a `## Docs update` disposition: either name the updated contract docs (`UPDATED`) or record an explicit exemption (`EXEMPT`). If a review still leaves residual risks, treat them as `track-or-waive` work before considering the review complete, and label each one explicitly as `Tracked by #...`, `Waived: ...`, or `Operational: ...`; do not leave residuals implied.
+
+In CI or other distributed runner setups, RocketMind's `.rocketmind.lock` mutex remains local-only. It prevents concurrent `STATE.md` writes inside one filesystem, but it does not provide cross-runner mutual exclusion. When `CI=true` or `distributed_mutex_warning` is enabled in `rocketmind.config.json`, the orchestrator emits a warning so operators do not mistake the local lock for a distributed safety guarantee.
+
+---
+
+## Slash commands
+
+```
+/rocketmind:new-project     Start a project from scratch
+/rocketmind:plan [N]        Research + spec + task breakdown for phase N
+/rocketmind:build [N]       Execute phase N with parallel wave architecture
+/rocketmind:verify [N]      Test + UAT + review phase N
+/rocketmind:ship [N]        PR + deploy + release tagging
+/rocketmind:next            Auto-detect and run the next step
+/rocketmind:quick <task>    Ad-hoc task with full quality guarantees
+/rocketmind:riper <task>    Structured Research→Innovate→Plan→Execute→Review
+/rocketmind:forge <desc>    Build a new specialized agent on demand
+/rocketmind:review          Code + architecture review (language-specific)
+/rocketmind:audit           Security audit via security-engineer (OWASP/STRIDE)
+/rocketmind:debug <issue>   4-phase systematic root-cause debugging
+/rocketmind:resume          Reload STATE.md after compaction or new session
+/rocketmind:progress        Current project status
+/rocketmind:worktree        Manage git worktrees for parallel wave execution
+/rocketmind:help            All commands and usage
+```
+
+---
+
+## Documentation
+
+| Doc                                                                                                    | Contents                                                                            |
+| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| [docs/architecture/overview.md](docs/architecture/overview.md)                                         | Control plane, wave execution model, model routing, repo layout, Nexus, Sentinel CI |
+| [docs/architecture/core-concepts.md](docs/architecture/core-concepts.md)                               | Agents, skills, workflows, STATE.md, hooks, Agent Forge                             |
+| [docs/architecture/token-optimization.md](docs/architecture/token-optimization.md)                     | Six-layer token strategy, cost estimates, model profiles                            |
+| [docs/architecture/security-model.md](docs/architecture/security-model.md)                             | Integrity verification, hook safety, prompt injection defense, SCA                  |
+| [docs/architecture/runtime-adapters.md](docs/architecture/runtime-adapters.md)                         | Claude (native), Codex (stable), Antigravity (experimental) adapter contracts       |
+| [docs/operations/playbooks.md](docs/operations/playbooks.md)                                           | Runbooks for common scenarios                                                       |
+| [docs/quality/evaluation-framework.md](docs/quality/evaluation-framework.md)                           | Eval framework and scoring methodology                                              |
+| [docs/quality/eval-dataset.md](docs/quality/eval-dataset.md)                                           | Representative prompt set for regression testing                                    |
+| [docs/plans/issue-125-provenance-driven-context-synthesis.md](docs/plans/issue-125-provenance-driven-context-synthesis.md) | Detailed recovery-engine plan and implementation waves |
+| [docs/standards/artifact-conventions.md](docs/standards/artifact-conventions.md)                       | Naming, placement, and traceability rules for plans, releases, and issue docs       |
+| [docs/integrations/mcp-guide.md](docs/integrations/mcp-guide.md)                                       | MCP server integration                                                              |
+| [docs/operations/error-codes.md](docs/operations/error-codes.md)                                       | ERR-ROCKETMIND-NNN registry with runbooks                                                |
+| [docs/governance/contributing.md](docs/governance/contributing.md)                                     | How to add skills, agents, or patterns                                              |
+| [docs/governance/code-of-conduct.md](docs/governance/code-of-conduct.md)                               | Community behavior and enforcement expectations                                     |
+| [docs/releases/release-notes.md](docs/releases/release-notes.md)                                       | Top-level release notes used for GitHub releases                                    |
+| [SECURITY.md](SECURITY.md)                                                                             | Vulnerability reporting and threat model                                            |
+
+Planning artifacts belong in `docs/plans/`. Release support artifacts belong in `docs/releases/`. Durable issue briefs belong in `docs/issues/` only when needed. Canonical documentation is grouped by intent under `docs/architecture/`, `docs/operations/`, `docs/quality/`, `docs/integrations/`, and `docs/governance/`. Naming and ordering rules live in `docs/standards/artifact-conventions.md`.
+The repo root is intentionally a thin contract: public entrypoints, generated runtime-facing artifacts, and top-level metadata stay in root; new durable docs should default to `docs/`.
+
+---
+
+## Why Use This Framework
+
+### With RocketMind
+
+- Requests are classified before execution — the right agent gets the right job
+- Complex work is decomposed into waves instead of being forced through one long context
+- Skills create repeatable standards for TDD, architecture, security, and deployment
+- Hooks and STATE.md make long-running work resumable across sessions
+- The same repo works across Claude, Codex, and Antigravity without rewrites
+
+### Without RocketMind
+
+- The assistant jumps straight into implementation, skipping planning and review
+- Context accumulates until earlier architectural decisions become fuzzy
+- Security and operational concerns depend on memory rather than explicit process
+- Multi-step work is harder to resume, audit, or hand off
+
+---
+
+## Sample Eval Set
+
+Use [docs/quality/eval-dataset.md](docs/quality/eval-dataset.md) to verify routing, workflow, and portability claims after changes. Representative prompts: add rate limiting to auth endpoints · design a multi-region active-active architecture · review a React auth component · create a CI/CD rollback plan · unknown domain with high uncertainty.
+
+---
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Full patent protections for enterprise adoption.

@@ -1,0 +1,115 @@
+{
+  "$schema": "./rocketmind.config.schema.json",
+  "project": {
+    "name": "",
+    "org": "shiprocket",
+    "state_dir": ".rocketmind/state",
+    "hooks_dir": ".rocketmind/hooks"
+  },
+  "mode": {
+    "default": "collaborative",
+    "options": ["autonomous", "collaborative", "audit"],
+    "description": "autonomous=hands-off, collaborative=human-in-loop, audit=review-only"
+  },
+  "models": {
+    "routing": {
+      "classify":  "claude-haiku-4-5-20251001",
+      "standard":  "claude-sonnet-4-6",
+      "reasoning": "claude-opus-4-6",
+      "security":  "claude-opus-4-6"
+    },
+    "profiles": {
+      "classify":    { "model": "claude-haiku-4-5-20251001",  "max_tokens": 1024,  "use_for": ["intent classification", "context routing", "simple lookups"] },
+      "implement":   { "model": "claude-sonnet-4-6",          "max_tokens": 8192,  "use_for": ["coding", "refactoring", "debugging", "most tasks"] },
+      "architect":   { "model": "claude-opus-4-6",            "max_tokens": 16384, "use_for": ["system design", "architecture decisions", "complex reasoning"] },
+      "quick":       { "model": "claude-haiku-4-5-20251001",  "max_tokens": 2048,  "use_for": ["one-liners", "quick lookups", "format conversions"] }
+    },
+    "cost_guard": {
+      "warn_at_tokens": 100000,
+      "hard_limit_tokens": 180000,
+      "auto_resume_on_compact": true
+    }
+  },
+  "agents": {
+    "forge_threshold": 0.6,
+    "recommended_parallel_sessions": 8,
+    "context_per_subagent": 200000,
+    "auto_register_forged": true
+  },
+  "git": {
+    "strategy": "phase",
+    "options": ["none", "task", "phase", "milestone"],
+    "atomic_commits": true,
+    "conventional_commits": true,
+    "worktree_per_task": true
+  },
+  "skills": {
+    "auto_load": true,
+    "lazy_load": true,
+    "cache_loaded": true
+  },
+  "hooks": {
+    "pre_compact": true,
+    "stop": true,
+    "pre_tool_use": true,
+    "post_tool_use": false,
+    "on_error": true
+  },
+  "security": {
+    "prompt_injection_detection": true,
+    "secret_scan_on_commit": true,
+    "destructive_command_guard": true,
+    "identity_separation": false
+  },
+  "loop_detection": {
+    "enabled": true,
+    "window_size": 8,
+    "threshold": 3
+  },
+  "clarification_gate": true,
+  "distributed_mutex_warning": false,
+  "notifications": {
+    "slack_webhook_url": "",
+    "on_phase_complete": false,
+    "on_deploy": false,
+    "on_error": false
+  },
+  "mcp": {
+    "max_active_tools": 10,
+    "recommended": ["filesystem", "git", "github", "fetch"],
+    "avoid_in_production": ["dangerous-tools"]
+  },
+  "adapters": {
+    "base_path": ".rocketmind/adapters",
+    "pattern": ".rocketmind/adapters/{tool}/"
+  },
+  "runtimes": {
+    "claude": {
+      "name": "Claude",
+      "instruction_file": "CLAUDE.md",
+      "install_path": ".claude/CLAUDE.md",
+      "capabilities": {
+        "implicit_prompt_routing": true,
+        "routing_mechanism": "native instruction orchestration"
+      }
+    },
+    "codex": {
+      "name": "Codex",
+      "instruction_file": "INSTRUCTIONS.md",
+      "install_path": ".codex/INSTRUCTIONS.md",
+      "capabilities": {
+        "implicit_prompt_routing": true,
+        "routing_mechanism": "operator prompt and policy files"
+      }
+    },
+    "antigravity": {
+      "name": "Antigravity",
+      "instruction_file": "CLAUDE.md",
+      "install_path": ".antigravity/CLAUDE.md",
+      "capabilities": {
+        "implicit_prompt_routing": false,
+        "routing_mechanism": "not currently supported"
+      }
+    }
+  }
+}

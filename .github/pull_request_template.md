@@ -1,0 +1,83 @@
+## Summary
+- <!-- concise summary bullet -->
+
+## Issues
+- Closes #<!-- issue -->
+- Relates to #<!-- optional -->
+
+## Ship Decision
+- Review: `/rocketmind:review`
+- Head SHA: `<!-- replace with current branch head sha; update on every follow-up commit -->`
+- Merge when checks are green
+
+## Test plan
+- `<!-- command -->`
+
+## Merge notes
+- <!-- optional notes / relevant exceptions -->
+
+## Docs update
+- Status: `<!-- UPDATED or EXEMPT -->`
+- Notes: <!-- list updated docs or explain the exemption -->
+
+---
+
+## RocketMind Self-Review
+
+> This framework reviews other projects' code. It must review its own.
+> Run the relevant agent before raising this PR. Record the verdict below.
+> If you push follow-up commits after opening the PR, refresh this body before requesting review again.
+> CI requires this section and the `## Test plan` to contain real evidence, not placeholders.
+
+### Agent Review Verdict
+
+**Command run**: <!-- e.g. /rocketmind:review, /rocketmind:audit, /rocketmind:plan -->
+
+**Agent(s) dispatched**: <!-- e.g. reviewer, architect, security-engineer -->
+
+**Ship decision**: <!-- APPROVED / APPROVED WITH CONDITIONS / BLOCKED -->
+
+**Findings addressed** (paste critical/high findings and how you resolved them, or "none"):
+```
+(findings here)
+```
+
+**Residual risks** (use one label per item: `Tracked by #...`, `Waived: ...`, or `Operational: ...`, or `none`):
+```
+(residual risks here)
+```
+
+---
+
+## Checklist
+
+### Branch
+- [ ] This PR is from a feature branch, NOT a direct push to `develop` or `main`
+- [ ] Branch name follows convention: `<type>/<slug>` such as `feat/143-pr-governance-enforcement` or `fix/145-context-minimal-dedup`
+- [ ] If this PR changed after opening, the `Summary`, `Issues`, `Ship Decision`, `Test plan`, and `Merge notes` sections were refreshed before re-review
+- [ ] If review left residual risks, their disposition is recorded: linked issue, new hardening issue, or explicit waiver
+
+### Code
+- [ ] Tests added or updated for changed behaviour
+- [ ] `npm test` + `npm run lint` pass
+- [ ] `bash bin/validate.sh` passes — registry integrity (catches missing files, broken references)
+- [ ] `bash bin/validate-config.sh` passes — cross-file consistency (version, hooks, model IDs)
+- [ ] No hardcoded model IDs — only semantic aliases from `rocketmind.config.json → models.routing`
+- [ ] No hardcoded local paths (`/Users/...`)
+
+### Architecture
+- [ ] Does not duplicate content already in `rocketmind.registry.json` (registry is SSOT)
+- [ ] New agents registered in both `rocketmind.registry.json` AND `CLAUDE.md`
+- [ ] New skills added to the skills auto-loading table in `CLAUDE.md`
+- [ ] Kernel/userland boundary respected — no vertical domain content in `skills/` or `agents/`
+
+### Docs
+- [ ] `CHANGELOG.md` updated with this version's entry
+- [ ] `README.md` updated if behaviour or interface changed
+- [ ] `STATE.md` anti-patterns list updated if a known issue was fixed or a new one introduced
+- [ ] `## Docs update` reflects either the updated contract docs or the explicit exemption
+
+### Release (only for version bumps)
+- [ ] `package.json` version bumped — this is the single source of version truth
+- [ ] `rocketmind.config.json` does NOT contain a `version` field (remove if present)
+- [ ] CHANGELOG entry matches `package.json` version exactly
